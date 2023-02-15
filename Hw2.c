@@ -1,12 +1,42 @@
 #include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-int main(){
+
+
+
+enum Flags{
+    size_limit = 1 << 0,
+    extra_details = 1 << 1,
+    filter_string = 1 << 2,
+    depth_control = 1 << 3,
+    dirs_or_files_only = 1 << 4
+};
+
+//Aliasing
+typedef enum Flags Flags;
+Flags m_flags = 0;
+
+// structure to keep track of all supplied arguments
+struct Args {
+    char *start_dir;
+    int size_limit;
+    char *filter;
+    int depth;
+    int show_details;
+    int dirs_or_files_only;
+};
 
 typedef struct Args Args;
 Args cmd_args;
 
+//this function uses getopt to parse the supplied
+//commandline arguments
 int parse_args(int argc, char ** argv) {
     int c;
     while ((c = getopt(argc, argv, "s:t:f:S")) != -1) {
@@ -47,7 +77,26 @@ int parse_args(int argc, char ** argv) {
 
     return 1;
 }
-    
+
+//returns the indentation depending upon depth/size
+// https://man7.org/linux/man-pages/man3/bzero.3.html
+char* get_indent(int sz) {
+    char *id = malloc(sizeof (char) * sz+1);
+    bzero(id, sz+1);
+    for(int i=0; i<sz; ++i)
+        id[i] = '\t';
+    return id;
+}
+
+typedef char* (*Indent) (int);
+
+int main(int argc, char *argv[]){
+    if(!parse_args(argc, argv)) {
+        cmd_args.start_dir = malloc(sizeof (char) * 100);
+        bzero(cmd_args.start_dir, 100);
+        getcwd(cmd_args.start_dir, 100);
+    }
+ 
 
 
 
